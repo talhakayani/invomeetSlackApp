@@ -47,7 +47,7 @@ exports.generateMessageForRooms = (rooms, available) => {
       type: 'input',
       element: {
         type: 'datepicker',
-        initial_date: '1990-04-28',
+        initial_date: dateTime(true),
         placeholder: {
           type: 'plain_text',
           text: 'Select a date',
@@ -65,7 +65,7 @@ exports.generateMessageForRooms = (rooms, available) => {
       type: 'input',
       element: {
         type: 'timepicker',
-        initial_time: '13:37',
+        initial_time: dateTime(false),
         placeholder: {
           type: 'plain_text',
           text: 'Select time',
@@ -167,6 +167,13 @@ const roomsSelectionOptions = rooms => {
   });
 
   return options;
+};
+
+const dateTime = dateOrTime => {
+  const date = new Date();
+  return dateOrTime
+    ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
+    : `${date.getHours()}:${date.getMinutes()}`;
 };
 /*
 
