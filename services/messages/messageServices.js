@@ -1,4 +1,7 @@
-exports.generateMessageForRooms = (rooms, available) => {
+const commandServices = require('../commands/commandServices');
+const api = require('../api/apiServices');
+const { generatedTextForUsers } = require('../utils/helperFunctions');
+exports.generateMessageForRooms = rooms => {
   let roomsRecord = [
     {
       type: 'header',
@@ -47,7 +50,6 @@ exports.generateMessageForRooms = (rooms, available) => {
       type: 'input',
       element: {
         type: 'datepicker',
-        initial_date: dateTime(true),
         placeholder: {
           type: 'plain_text',
           text: 'Select a date',
@@ -65,7 +67,6 @@ exports.generateMessageForRooms = (rooms, available) => {
       type: 'input',
       element: {
         type: 'timepicker',
-        initial_time: dateTime(false),
         placeholder: {
           type: 'plain_text',
           text: 'Select time',
@@ -98,59 +99,7 @@ exports.generateMessageForRooms = (rooms, available) => {
       ],
     },
   ];
-
-  // rooms.forEach(room => {
-  //   roomsRecord.push(
-  //     {
-  //       type: 'section',
-  //       fields: [
-  //         {
-  //           type: 'mrkdwn',
-  //           text: `*Room Name*:\n${room.name}`,
-  //         },
-  //         {
-  //           type: 'mrkdwn',
-  //           text: `*Room location*:\n${room.location}`,
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       type: 'section',
-  //       fields: [
-  //         {
-  //           type: 'mrkdwn',
-  //           text: `*Room Capacity*:\n${room.capacity}`,
-  //         },
-  //         {
-  //           type: 'mrkdwn',
-  //           text: `*Room Status*:\n*${room.status.toUpperCase()}*`,
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       type: 'section',
-  //       text: {
-  //         type: 'mrkdwn',
-  //         text: 'Would you like to reserve the room?',
-  //       },
-  //       accessory: {
-  //         type: 'button',
-  //         text: {
-  //           type: 'plain_text',
-  //           text: 'Reserve',
-  //           emoji: true,
-  //         },
-  //         style: 'primary',
-  //         value: 'reserve_room',
-  //         action_id: 'button-action' + room.id,
-  //       },
-  //     },
-  //     {
-  //       type: 'divider',
-  //     }
-  //   );
-  // });
-  return { blocks: roomsRecord };
+  return roomsRecord;
 };
 
 const roomsSelectionOptions = rooms => {
@@ -175,6 +124,69 @@ const dateTime = dateOrTime => {
     ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
     : `${date.getHours()}:${date.getMinutes()}`;
 };
+
+exports.generateMessageForUpdate = async selectedInformation => {
+  const { selected_room, selected_date, selected_time } = selectedInformation;
+  // console.log(selected_date, selected_time, selected_room);
+  let users = [],
+    usersNames = [];
+  const roomInfo = await api.getRoomInformationByName(selected_room);
+  if (
+    selectedInformation.hasOwnProperty('selected_users') &&
+    selectedInformation.selected_users.length
+  ) {
+    users = await commandServices.getUsersInformation(
+      selectedInformation.selected_users
+    );
+
+    users.forEach(user => usersNames.push(user.user.real_name));
+  }
+  let blockJson = [
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: 'Meeting Room Information',
+        emoji: true,
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*${selected_room} Room* is reserved for you ${generatedTextForUsers(
+          usersNames
+        )} on *${selected_date}* at *${selected_time}*\nRoom is located at *${
+          roomInfo.location
+        }*`,
+      },
+    },
+  ];
+  return blockJson;
+};
+
+/*
+{
+	"blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Meeting Room Information",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Meeting Room name* is reserved for you with *Talha* and *Sheraz* on *Date* at *2:00PM*\nRoom is located at *Ground Floor*"
+			}
+		}
+	]
+}
+*/
+
 /*
 
 {

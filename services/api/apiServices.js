@@ -16,4 +16,10 @@ exports.getAvailableRooms = async () => {
   return rooms;
 };
 
+exports.getRoomInformationByName = async name => {
+  const { data } = await axios(DOMAIN_NAME + `/find/name/${name}`);
+  const { status, message, room } = data;
+  if (status !== 200) return {};
+  return room;
+};
 // Interactions
