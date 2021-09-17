@@ -8,13 +8,15 @@ const {
 const { reserveTheRoom } = require('../../services/api/apiServices');
 require('dotenv').config('../../.env');
 const fs = require('fs');
+const { authorize } = require('../../services/google_calander/auth');
 
 exports.interactions = async (req, res, _next) => {
   try {
     res.status(200).send();
     const payload = JSON.parse(req.body.payload);
     const { user, actions, container, channel } = payload;
-
+    const credentials = JSON.parse(process.env.CREDENTIALS);
+    const oAuth2Client = authorize(credentials, channel.id, user.id, true);
     //console.log(user, actions, container, channel);
     // const actions = payload.actions;
     if (!actions.length)
@@ -22,6 +24,7 @@ exports.interactions = async (req, res, _next) => {
     const [data] = actions;
 
     const { type, action_id } = data;
+    //console.log(action_id);
     let information,
       btnClicked = false;
 
@@ -76,6 +79,25 @@ exports.interactions = async (req, res, _next) => {
         updateMessage(container.channel_id, container.message_ts, message);
         if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
         btnClicked = true;
+        break;
+
+      case 'token-input':
+        const { value } = actions[0];
+        oAuth2Client.getToken(value, (err, token) => {
+          if (err) return console.error('Error retrieving access token', err);
+          oAuth2Client.setCredentials(token);
+          fs.writeFile('token.json', JSON.stringify(token), err => {
+            if (err) throw new Error('Unable to save the token');
+            updateMessage(
+              container.channel_id,
+              container.message_ts,
+              helperFunction.sendErrorMessage(
+                'Token Saved! now you can run the application without /connect-google-calendar command'
+              )
+            );
+          });
+          return res.status(200).send();
+        });
         break;
     }
     //console.log(data);

@@ -1,8 +1,10 @@
 const commandServices = require('../../services/commands/commandServices');
 const messages = require('../../services/messages/messageServices');
 const api = require('../../services/api/apiServices');
+require('dotenv').config('../../.env');
 const fs = require('fs');
 const { sendErrorMessage } = require('../../services/utils/helperFunctions');
+const { authorize } = require('../../services/google_calander/auth');
 
 exports.roomsAvailable = async (req, res, _next) => {
   try {
@@ -30,6 +32,33 @@ exports.roomsAvailable = async (req, res, _next) => {
       )
     );
     console.log('everything is running');
+  } catch (err) {
+    return res.status(400).end('Something went wrong');
+  }
+};
+
+exports.connectToGoogleCalendar = async (req, res, _next) => {
+  try {
+    res.status(200).send();
+    const { token, channel_id, user_id, command, text, response_url } =
+      req.body;
+    //console.log(token, channel_id, user_id, command, text, response_url);
+    const credentials = JSON.parse(process.env.CREDENTIALS);
+    //console.log(credentials);
+
+    fs.readFile('token.json', (err, token) => {
+      if (err) {
+        authorize(credentials, channel_id, user_id, false);
+      } else {
+        commandServices.sendPrivateMessage(
+          channel_id,
+          user_id,
+          sendErrorMessage('Google Calendar already configured')
+        );
+      }
+    });
+
+    // TODO connection google calander api
   } catch (err) {
     return res.status(400).send();
   }

@@ -165,6 +165,35 @@ exports.generateMessageForUpdate = async selectedInformation => {
   return blockJson;
 };
 
+exports.generateMessageForToken = tokenURL => {
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text:
+          'Please click the link below and copy the token and paste that token in below textbox\n' +
+          tokenURL,
+      },
+    },
+    {
+      dispatch_action: true,
+      type: 'input',
+      element: {
+        type: 'plain_text_input',
+        action_id: 'token-input',
+      },
+      label: {
+        type: 'plain_text',
+        text: 'Token',
+        emoji: true,
+      },
+    },
+  ];
+};
+
+
+
 /*
 {
 	"blocks": [
