@@ -162,7 +162,7 @@ exports.generateMessageForUpdate = async selectedInformation => {
       },
     },
   ];
-  return blockJson;
+  return { blockJson, roomInfo };
 };
 
 exports.generateMessageForToken = tokenURL => {
@@ -191,8 +191,6 @@ exports.generateMessageForToken = tokenURL => {
     },
   ];
 };
-
-
 
 /*
 {

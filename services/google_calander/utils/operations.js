@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
 
-exports.addEvent = auth => {
+exports.addEvent = (event, auth) => {
   const calendar = google.calendar({ version: 'v3', auth });
   calendar.events.insert(
     {
@@ -13,9 +13,8 @@ exports.addEvent = auth => {
         console.log(
           'There was an error contacting the Calendar service: ' + err
         );
-        return;
       }
-      console.log('Event created:');
+      console.log('Event Created');
     }
   );
 };

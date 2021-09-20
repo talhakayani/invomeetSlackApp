@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 require('dotenv').config('../../.env');
 const fs = require('fs');
+const { addEvent } = require('../../services/google_calander/utils/operations');
 const { sendMessageToSlackUrl } = require('../commands/commandServices');
 const { generateMessageForToken } = require('../messages/messageServices');
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
@@ -12,13 +13,13 @@ exports.authorize = (credentials, channel_id, user_id, forResponse) => {
     client_secret,
     redirect_uris[0]
   );
-  // Check if we have previously stored a token.
-  // fs.readFile(TOKEN_PATH, (err, token) => {
-  //   if (err) return getAccessToken(oAuth2Client, channel_id, user_id);
-  //   oAuth2Client.setCredentials(JSON.parse(token));
-  //   callback(oAuth2Client);
-  // });
   if (!forResponse) return getAccessToken(oAuth2Client, channel_id, user_id);
+  fs.readFile('token.json', (err, token) => {
+    if (err) console.log('Unable to read the token.json');
+    else {
+      oAuth2Client.setCredentials(JSON.parse(token));
+    }
+  });
   return oAuth2Client;
 };
 
@@ -33,21 +34,4 @@ function getAccessToken(oAuth2Client, channel_id, user_id) {
   sendMessageToSlackUrl(channel_id, message);
 
   return oAuth2Client;
-  //   const rl = readline.createInterface({
-  //     input: process.stdin,
-  //     output: process.stdout,
-  //   });
-  //   rl.question('Enter the code from that page here: ', code => {
-  //     rl.close();
-  //     oAuth2Client.getToken(code, (err, token) => {
-  //       if (err) return console.error('Error retrieving access token', err);
-  //       oAuth2Client.setCredentials(token);
-  //       // Store the token to disk for later program executions
-  //       fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
-  //         if (err) return console.error(err);
-  //         console.log('Token stored to', TOKEN_PATH);
-  //       });
-  //       callback(oAuth2Client);
-  //     });
-  //   });
 }

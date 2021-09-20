@@ -1,8 +1,6 @@
 const { app, client } = require('../../connection/slackConnection');
 require('dotenv').config('../../.env');
 
-
-
 exports.sendPrivateMessage = async (channel_id, userid, message) => {
   try {
     const result = await app.client.chat.postEphemeral({

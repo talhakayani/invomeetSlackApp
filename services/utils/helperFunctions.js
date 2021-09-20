@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const app = require('../../connection/slackConnection');
+const { getUsersInformation } = require('../commands/commandServices');
 exports.findMentions = text => {
   const exp = /<(.*?)>/;
   var test = text.match(exp);
@@ -89,4 +90,57 @@ exports.sendErrorMessage = message => {
       text: { type: 'plain_text', text: message },
     },
   ];
+};
+
+/**
+ * Implementation of google calendar event
+ */
+
+const TIMEOFFSET = '+05:00';
+
+const dateTimeForCalander = (offset, dateTime) => {
+  const [date, time] = dateTime.split('=');
+  //const [year, month, day] = date.split('-');
+  //const [hours, minutes] = time.split(':');
+
+  const newDate = `${date}T${time}:00.000${offset}`;
+
+  const event = new Date(Date.parse(newDate));
+
+  const startDate = event;
+  const endDate = new Date(
+    new Date(startDate).setHours(startDate.getHours() + 1)
+  );
+
+  return {
+    start: startDate,
+    end: endDate,
+  };
+};
+
+exports.eventForGoogleCalendar = information => {
+  let dateTime = dateTimeForCalander(TIMEOFFSET, information.dateTime);
+  let event = {
+    summary: 'InvoMeet Room Reservation',
+    location: information.location,
+    description: information.message.replace('*', '').replace('/n', ' '),
+    start: {
+      dateTime: dateTime['start'],
+      timeZone: 'Asia/Karachi',
+    },
+    end: {
+      dateTime: dateTime['end'],
+      timeZone: 'Asia/Karachi',
+    },
+    recurrence: ['RRULE:FREQ=DAILY;COUNT=2'],
+    attendees: information.attendees,
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'email', minutes: 24 * 60 },
+        { method: 'popup', minutes: 10 },
+      ],
+    },
+  };
+  return event;
 };
