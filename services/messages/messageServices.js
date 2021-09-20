@@ -108,7 +108,7 @@ const roomsSelectionOptions = rooms => {
     options.push({
       text: {
         type: 'plain_text',
-        text: `${room.name}`,
+        text: `${room.name} Located: ${room.location}`,
         emoji: true,
       },
       value: `value-${room.id}`,
@@ -190,6 +190,44 @@ exports.generateMessageForToken = tokenURL => {
       },
     },
   ];
+};
+
+exports.generateMeetingsMessage = async meetings => {
+  const block = [
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: 'Your Meetings',
+        emoji: true,
+      },
+    },
+  ];
+
+  for (let i = 0; i < meetings.length; i++) {
+    const { reservedWith, reservedFrom, location, name } = meetings[i];
+    const information = await commandServices.getUsersInformation(
+      reservedWith.split(',')
+    );
+    reservedFrom.replace('=', ' ');
+    const names = [];
+    information.forEach(info => {
+      names.push(info.user.real_name);
+    });
+    const userText = generatedTextForUsers(names);
+    const meetingList = {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `${i + 1}. Meeting with ${userText} at *${reservedFrom.replace(
+          '=',
+          ' '
+        )}* in *${name}* Room on *${location}*`,
+      },
+    };
+    block.push(meetingList);
+  }
+  return block;
 };
 
 /*

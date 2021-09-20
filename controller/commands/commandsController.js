@@ -20,7 +20,11 @@ exports.roomsAvailable = async (req, res, _next) => {
       // create interactive message
       const message = messages.generateMessageForRooms(rooms);
       // // // send message to the slack
-      commandServices.sendMessageToSlackUrl(channel_id, message);
+      commandServices.sendMessageToSlackUrl(
+        channel_id,
+        'Room Information',
+        message
+      );
 
       return res.status(200).send();
     }
@@ -61,5 +65,24 @@ exports.connectToGoogleCalendar = async (req, res, _next) => {
     // TODO connection google calander api
   } catch (err) {
     return res.status(400).send();
+  }
+};
+
+exports.my_meetings = async (req, res, _next) => {
+  try {
+    res.status(200).send();
+    const { body } = req;
+    const { user_id, channel_id } = body;
+    const meetings = await api.getMeetings(user_id);
+    const message = await messages.generateMeetingsMessage(meetings);
+    //TODO with my meetings
+    const result = await commandServices.sendMessageToSlackUrl(
+      channel_id,
+      'Your Meetings',
+      message
+    );
+    console.log(result);
+  } catch (err) {
+    return res.status(200).send();
   }
 };

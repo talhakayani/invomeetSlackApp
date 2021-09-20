@@ -40,3 +40,10 @@ exports.reserveTheRoom = async (
   if (st == 200) return message;
   else return message;
 };
+
+exports.getMeetings = async userId => {
+  const { data } = await axios.get(DOMAIN_NAME + `/find/meetings/${userId}`);
+  const { status, message, meetings } = data;
+  if (status != 200) return [];
+  return meetings;
+};

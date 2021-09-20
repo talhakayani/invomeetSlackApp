@@ -15,14 +15,15 @@ exports.sendPrivateMessage = async (channel_id, userid, message) => {
   }
 };
 
-exports.sendMessageToSlackUrl = async (channel_id, message) => {
+exports.sendMessageToSlackUrl = async (channel_id, text, message) => {
   try {
     const result = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: channel_id,
-      text: 'Rooms Information',
+      text: text,
       blocks: message,
     });
+    return result;
   } catch (err) {
     return err.message;
   }

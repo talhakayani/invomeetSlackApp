@@ -34,7 +34,9 @@ exports.interactions = async (req, res, _next) => {
 
     if (action_id == 'room-selection') {
       information =
-        data.selected_option != null ? data.selected_option.text.text : '';
+        data.selected_option != null
+          ? data.selected_option.text.text.split(' ')[0]
+          : '';
     }
     if (action_id == 'meeting-with') {
       information = data.selected_users != null ? data.selected_users : [];
@@ -68,6 +70,7 @@ exports.interactions = async (req, res, _next) => {
         selectedInformation.selected_users.length
       ) {
         selected_users = selectedInformation.selected_users;
+        console.log(selectedInformation.selected_users);
         selected_users = await getUsersInformation(selected_users);
         // console.log(selected_users[0].user.profile.email);
         for (let i = 0; i < selected_users.length; i++) {
@@ -89,7 +92,7 @@ exports.interactions = async (req, res, _next) => {
         selected_room,
         'busy',
         user.id,
-        '' + selected_users,
+        '' + selectedInformation.selected_users,
         `${selected_date}=${selected_time}`
       );
 
