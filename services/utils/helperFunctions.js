@@ -123,7 +123,7 @@ exports.eventForGoogleCalendar = information => {
   let event = {
     summary: 'InvoMeet Room Reservation',
     location: information.location,
-    description: information.message.replace('*', '').replace('/n', ' '),
+    description: information.message.replace(/\*/g, '').replace('/n', ' '),
     start: {
       dateTime: dateTime['start'],
       timeZone: 'Asia/Karachi',
@@ -132,7 +132,7 @@ exports.eventForGoogleCalendar = information => {
       dateTime: dateTime['end'],
       timeZone: 'Asia/Karachi',
     },
-    recurrence: ['RRULE:FREQ=DAILY;COUNT=2'],
+    recurrence: ['RRULE:FREQ=DAILY;COUNT=1'],
     attendees: information.attendees,
     reminders: {
       useDefault: false,

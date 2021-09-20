@@ -67,7 +67,6 @@ exports.interactions = async (req, res, _next) => {
         selectedInformation.hasOwnProperty('selected_users') &&
         selectedInformation.selected_users.length
       ) {
-        console.log('here we go');
         selected_users = selectedInformation.selected_users;
         selected_users = await getUsersInformation(selected_users);
         // console.log(selected_users[0].user.profile.email);
@@ -75,20 +74,17 @@ exports.interactions = async (req, res, _next) => {
           emails.push({ email: selected_users[i].user.profile.email });
         }
       }
-      console.log(emails);
       let information = {
         dateTime: selected_date + '=' + selected_time,
         message: blockJson[1].text.text,
         attendees: emails != null ? emails : [],
         location: roomInfo.location + ', at InvoZone office',
       };
+
+      //console.log(result);
+      //TODO:  Adding google calendar event
       const event = helperFunction.eventForGoogleCalendar(information);
       addEvent(event, oAuth2Client);
-      // if (addEventResults != 1) {
-      //   console.log('token needs to be refreshed');
-      //   return res.status(200).send();
-      // }
-      //TODO:  Database changes
       const result = reserveTheRoom(
         selected_room,
         'busy',
@@ -96,8 +92,6 @@ exports.interactions = async (req, res, _next) => {
         '' + selected_users,
         `${selected_date}=${selected_time}`
       );
-      //console.log(result);
-      //TODO:  Adding google calendar event
 
       updateMessage(container.channel_id, container.message_ts, blockJson);
       if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
