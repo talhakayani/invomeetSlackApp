@@ -74,6 +74,14 @@ exports.my_meetings = async (req, res, _next) => {
     const { body } = req;
     const { user_id, channel_id } = body;
     const meetings = await api.getMeetings(user_id);
+    if (!meetings.length) {
+      commandServices.sendPrivateMessage(
+        channel_id,
+        user_id,
+        sendErrorMessage("You don't have any meeting for now")
+      );
+      return res.status(200).send();
+    }
     const message = await messages.generateMeetingsMessage(meetings);
     //TODO with my meetings
     const result = await commandServices.sendMessageToSlackUrl(

@@ -1,6 +1,7 @@
 const helperFunction = require('../../services/utils/helperFunctions');
 const messages = require('../../services/messages/messageServices');
 const { app } = require('../../connection/slackConnection');
+const { schedule, scheduleJob } = require('node-schedule');
 const {
   updateMessage,
   sendPrivateMessage,
@@ -70,7 +71,6 @@ exports.interactions = async (req, res, _next) => {
         selectedInformation.selected_users.length
       ) {
         selected_users = selectedInformation.selected_users;
-        console.log(selectedInformation.selected_users);
         selected_users = await getUsersInformation(selected_users);
         // console.log(selected_users[0].user.profile.email);
         for (let i = 0; i < selected_users.length; i++) {
@@ -84,6 +84,19 @@ exports.interactions = async (req, res, _next) => {
         location: roomInfo.location + ', at InvoZone office',
       };
 
+      const endTime = helperFunction.getDateAndTime(information.dateTime);
+      scheduleJob(endTime.end, () => {
+        reserveTheRoom(selected_room, 'available', null, null, null);
+        console.log('Meeting end');
+      });
+      console.lo('Meeting will end on: ' + endTime.end);
+      blockJson.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `Meeting will be end on: ${endTime.end}`,
+        },
+      });
       //console.log(result);
       //TODO:  Adding google calendar event
       const event = helperFunction.eventForGoogleCalendar(information);
@@ -97,6 +110,11 @@ exports.interactions = async (req, res, _next) => {
       );
 
       updateMessage(container.channel_id, container.message_ts, blockJson);
+
+      // const job = schedule.scheduleJob('randomMessage', '* * * * *', () => {
+      //   console.log('Some');
+      // });
+      // console.log('Temp');
       if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
       return res.status(200).send();
     }
@@ -210,6 +228,7 @@ exports.interactions = async (req, res, _next) => {
     }
     return res.status(200).send();
   } catch (err) {
+    console.log(err);
     return res.status(400).send();
   }
 };

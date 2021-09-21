@@ -98,20 +98,17 @@ exports.sendErrorMessage = message => {
 
 const TIMEOFFSET = '+05:00';
 
-const dateTimeForCalander = (offset, dateTime) => {
+const dateTimeForCalander = dateTime => {
   const [date, time] = dateTime.split('=');
   //const [year, month, day] = date.split('-');
   //const [hours, minutes] = time.split(':');
 
-  const newDate = `${date}T${time}:00.000${offset}`;
-
+  const newDate = `${date}T${time}:00.000${TIMEOFFSET}`;
   const event = new Date(Date.parse(newDate));
-
   const startDate = event;
   const endDate = new Date(
     new Date(startDate).setHours(startDate.getHours() + 1)
   );
-
   return {
     start: startDate,
     end: endDate,
@@ -119,7 +116,7 @@ const dateTimeForCalander = (offset, dateTime) => {
 };
 
 exports.eventForGoogleCalendar = information => {
-  let dateTime = dateTimeForCalander(TIMEOFFSET, information.dateTime);
+  let dateTime = dateTimeForCalander(information.dateTime);
   let event = {
     summary: 'InvoMeet Room Reservation',
     location: information.location,
@@ -144,3 +141,5 @@ exports.eventForGoogleCalendar = information => {
   };
   return event;
 };
+
+exports.getDateAndTime = dateTimeForCalander;
