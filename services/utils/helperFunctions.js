@@ -15,13 +15,13 @@ exports.findMentions = text => {
   return finalValue;
 };
 // this function will save the information for single time
-exports.insertInformation = (data, type) => {
+exports.insertInformation = (fileName, data, type) => {
   //path = '../../tempData.json';
   let readedJSON = {};
-  if (!fs.existsSync('tempData.json')) {
-    fs.writeFileSync('tempData.json', '');
+  if (!fs.existsSync(fileName)) {
+    fs.writeFileSync(fileName, '');
   } else {
-    readedJSON = JSON.parse(fs.readFileSync('tempData.json'));
+    readedJSON = JSON.parse(fs.readFileSync(fileName));
   }
   switch (type) {
     case 'room-selection':
@@ -38,17 +38,17 @@ exports.insertInformation = (data, type) => {
       break;
   }
 
-  fs.writeFileSync('tempData.json', JSON.stringify(readedJSON));
+  fs.writeFileSync(fileName, JSON.stringify(readedJSON));
 };
 
-exports.getInformationFromTheFile = () => {
+exports.getInformationFromTheFile = fileName => {
   // it will return an error when there no tempData.json file is exsits
-  if (!fs.existsSync('tempData.json'))
+  if (!fs.existsSync(fileName))
     return {
       error: true,
       message: "You're not providing any meeting related information",
     };
-  const data = JSON.parse(fs.readFileSync('tempData.json'));
+  const data = JSON.parse(fs.readFileSync(fileName));
   // it will return the JSON object when user select the room date and time
   if (
     data.hasOwnProperty('selected_room') &&

@@ -7,7 +7,10 @@ const {
   sendPrivateMessage,
   getUsersInformation,
 } = require('../../services/commands/commandServices');
-const { reserveTheRoom } = require('../../services/api/apiServices');
+const {
+  reserveTheRoom,
+  addTokenForGoogleCalendar,
+} = require('../../services/api/apiServices');
 require('dotenv').config('../../.env');
 const fs = require('fs');
 const { authorize } = require('../../services/google_calander/auth');
@@ -19,7 +22,7 @@ exports.interactions = async (req, res, _next) => {
     const payload = JSON.parse(req.body.payload);
     const { user, actions, container, channel } = payload;
     const credentials = JSON.parse(process.env.CREDENTIALS);
-    const oAuth2Client = authorize(credentials, channel.id, user.id, true);
+    // const oAuth2Client = authorize(credentials, channel.id, user.id, true);
     // console.log(oAuth2Client);
     //console.log(user, actions, container, channel);
     // const actions = payload.actions;
@@ -50,7 +53,9 @@ exports.interactions = async (req, res, _next) => {
     }
     if (action_id == 'reserve-room-btn') {
       btnClicked = true;
-      const selectedInformation = helperFunction.getInformationFromTheFile();
+      const selectedInformation = helperFunction.getInformationFromTheFile(
+        `tempData${user.id}.json`
+      );
       if (selectedInformation.error) {
         sendPrivateMessage(
           channel.id,
@@ -89,7 +94,7 @@ exports.interactions = async (req, res, _next) => {
         reserveTheRoom(selected_room, 'available', null, null, null);
         console.log('Meeting end');
       });
-      console.lo('Meeting will end on: ' + endTime.end);
+      console.log('Meeting will end on: ' + endTime.end);
       blockJson.push({
         type: 'section',
         text: {
@@ -100,6 +105,17 @@ exports.interactions = async (req, res, _next) => {
       //console.log(result);
       //TODO:  Adding google calendar event
       const event = helperFunction.eventForGoogleCalendar(information);
+
+      const oAuth2Client = await authorize(
+        credentials,
+        channel.id,
+        user.id,
+        true
+      );
+      /**
+       * the below line will be removed
+       */
+      // return res.status(200).send();
       addEvent(event, oAuth2Client);
       const result = reserveTheRoom(
         selected_room,
@@ -115,116 +131,56 @@ exports.interactions = async (req, res, _next) => {
       //   console.log('Some');
       // });
       // console.log('Temp');
-      if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
+      // if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
+      if (fs.existsSync(`tempData${user.id}.json`))
+        fs.unlinkSync(`tempData${user.id}.json`);
       return res.status(200).send();
     }
 
     if (action_id == 'token-input') {
       const { value } = actions[0];
-      oAuth2Client.getToken(value, (err, token) => {
+      const oAuth2Client = await authorize(
+        credentials,
+        channel.id,
+        user.id,
+        true
+      );
+      oAuth2Client.getToken(value, async (err, token) => {
         if (err) return console.error('Error retrieving access token', err);
         oAuth2Client.setCredentials(token);
-        fs.writeFile('token.json', JSON.stringify(token), err => {
-          if (err) return console.error('Unable to create the token file', err);
+        //TODO Insert Token to Database here
+        // Route will use  /token/add
+        const body = {
+          user_id: user.id,
+          token: JSON.stringify(token),
+          calendarId: 'Primary',
+        };
+        const result = await addTokenForGoogleCalendar(body);
+        if (!result) {
           updateMessage(
             container.channel_id,
             container.message_ts,
-            helperFunction.sendErrorMessage(
-              'Token Saved! now you can run the application without /connect-google-calendar command'
-            )
+            helperFunction.sendErrorMessage('Unable to register the token')
           );
-        });
+          return res.status(200).send();
+        }
+        updateMessage(
+          container.channel_id,
+          container.message_ts,
+          helperFunction.sendErrorMessage(
+            'Token Saved! now you can run the application without /connect-google-calendar command'
+          )
+        );
+        return res.status(200).send();
       });
     }
-    /*switch (action_id) {
-      case 'room-selection':
-        console.log('room selection event performed');
-        console.log(btnClicked, data.selected_option.text.text);
-        information = data.selected_option.text.text;
-        // data.selected_option != null ? data.selected_option.text.text : '';
-        console.log(information);
-        break;
-      case 'meeting-with':
-        console.log('meeting with event performed');
-        information = data.selected_users != null ? data.selected_users : [];
-        break;
-      case 'meeting-date':
-        console.log('meeting date event performed');
-        information = data.selected_date != null ? data.selected_date : '';
-        break;
-      case 'meeting-time':
-        console.log('meeting time event performed');
-        information = data.selected_time != null ? data.selected_time : '';
-        break;
-      case 'reserve-room-btn':
-        //TODO implementaion here for all room reserve
-        const selectedInformation = helperFunction.getInformationFromTheFile();
-        if (selectedInformation.error) {
-          sendPrivateMessage(
-            channel.id,
-            user.id,
-            helperFunction.sendErrorMessage(selectedInformation.message)
-          );
-          return res.status(300).send();
-        }
-        const { blockJson, roomInfo } = await messages.generateMessageForUpdate(
-          selectedInformation
-        );
-        const { selected_room, selected_date, selected_time } =
-          selectedInformation;
-        let selected_users = null;
-        if (
-          selectedInformation.hasOwnProperty('selected_users') &&
-          selectedInformation.selected_users.length
-        )
-          selected_users = selectedInformation.selected_users;
-
-        //TODO:  Database changes
-        const result = reserveTheRoom(
-          selected_room,
-          'busy',
-          user.id,
-          '' + selected_users,
-          `${selected_date}=${selected_time}`
-        );
-        //console.log(result);
-        //TODO:  Adding google calendar event
-        let information = {
-          dateTime: selected_date + '=' + selected_time,
-          message: blockJson[1].text.text,
-          attendees: selected_users != null ? selected_users : [],
-          location: roomInfo.location + ', at InvoZone office',
-        };
-        const event = helperFunction.eventForGoogleCalendar(information);
-        addEvent(oAuth2Client, event);
-
-        updateMessage(container.channel_id, container.message_ts, blockJson);
-        if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
-        btnClicked = true;
-        break;
-      case 'token-input':
-        //btnClicked = true;
-        const { value } = actions[0];
-        oAuth2Client.getToken(value, (err, token) => {
-          if (err) return console.error('Error retrieving access token', err);
-          oAuth2Client.setCredentials(token);
-          fs.writeFile('token.json', JSON.stringify(token), err => {
-            if (err)
-              return console.error('Unable to create the token file', err);
-            updateMessage(
-              container.channel_id,
-              container.message_ts,
-              helperFunction.sendErrorMessage(
-                'Token Saved! now you can run the application without /connect-google-calendar command'
-              )
-            );
-          });
-        });
-        break;
-    }*/
     if (!btnClicked) {
       //  console.log('it is running...');
-      helperFunction.insertInformation(information, action_id);
+      helperFunction.insertInformation(
+        `tempData${user.id}.json`,
+        information,
+        action_id
+      );
     }
     return res.status(200).send();
   } catch (err) {

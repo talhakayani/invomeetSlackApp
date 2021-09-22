@@ -10,10 +10,12 @@ exports.roomsAvailable = async (req, res, _next) => {
   try {
     res.status(200).send();
 
-    if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
-
+    //if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
     const { token, channel_id, user_id, command, text, response_url } =
       req.body;
+    if (fs.existsSync(`tempData${user_id}.json`))
+      fs.unlinkSync(`tempData${user_id}.json`);
+
     //get all the information of rooms
     const rooms = await api.getAvailableRooms();
     if (rooms.length) {
@@ -50,20 +52,32 @@ exports.connectToGoogleCalendar = async (req, res, _next) => {
     const credentials = JSON.parse(process.env.CREDENTIALS);
     //console.log(credentials);
 
-    fs.readFile('token.json', (err, token) => {
-      if (err) {
-        authorize(credentials, channel_id, user_id, false);
-      } else {
-        commandServices.sendPrivateMessage(
-          channel_id,
-          user_id,
-          sendErrorMessage('Google Calendar already configured')
-        );
-      }
-    });
+    const data = await api.getTokenData(user_id);
+    if (!data.token) {
+      authorize(credentials, channel_id, user_id, false);
+      return res.status(200).send();
+    }
+
+    commandServices.sendPrivateMessage(
+      channel_id,
+      user_id,
+      sendErrorMessage('Google Calendar Already Configured')
+    );
+    // fs.readFile('token.json', (err, token) => {
+    //   if (err) {
+    //     authorize('token.json', credentials, channel_id, user_id, false);
+    //   } else {
+    //     commandServices.sendPrivateMessage(
+    //       channel_id,
+    //       user_id,
+    //       sendErrorMessage('Google Calendar already configured')
+    //     );
+    //   }
+    // });
 
     // TODO connection google calander api
   } catch (err) {
+    console.log(err);
     return res.status(400).send();
   }
 };
