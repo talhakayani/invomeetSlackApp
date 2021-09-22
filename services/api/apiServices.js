@@ -70,3 +70,10 @@ exports.getTokenData = async userId => {
   if (!data) return null;
   return data;
 };
+exports.isRoomAvailable = async room => {
+  const { data } = await axios.get(
+    DOMAIN_NAME + `/rooms/find/room/isAvailable/${room}`
+  );
+  if (!data) return null;
+  return data;
+};

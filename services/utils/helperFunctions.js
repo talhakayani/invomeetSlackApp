@@ -87,7 +87,7 @@ exports.sendErrorMessage = message => {
   return [
     {
       type: 'section',
-      text: { type: 'plain_text', text: message },
+      text: { type: 'mrkdwn', text: message },
     },
   ];
 };

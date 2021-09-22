@@ -10,6 +10,7 @@ const {
 const {
   reserveTheRoom,
   addTokenForGoogleCalendar,
+  isRoomAvailable,
 } = require('../../services/api/apiServices');
 require('dotenv').config('../../.env');
 const fs = require('fs');
@@ -19,6 +20,7 @@ const { addEvent } = require('../../services/google_calander/utils/operations');
 exports.interactions = async (req, res, _next) => {
   try {
     res.status(200).send();
+
     const payload = JSON.parse(req.body.payload);
     const { user, actions, container, channel } = payload;
     const credentials = JSON.parse(process.env.CREDENTIALS);
@@ -63,6 +65,33 @@ exports.interactions = async (req, res, _next) => {
           helperFunction.sendErrorMessage(selectedInformation.message)
         );
         return res.status(300).send();
+      }
+
+      /**
+       * here is the implementation of check
+       */
+      const data = await isRoomAvailable(selectedInformation.selected_room);
+      console.log(data);
+      if (!data.isAvailable) {
+        updateMessage(
+          container.channel_id,
+          container.message_ts,
+          helperFunction.sendErrorMessage(
+            'Ops! it seems that room is already reserved, please wait confirmation message will be sent in a moment'
+          )
+        );
+        const reservedBy = await getUsersInformation([data.reservedBy]);
+        const username = reservedBy[0].user.real_name;
+        const dateTime = helperFunction.getDateAndTime(data.reservedFrom);
+
+        sendPrivateMessage(
+          container.channel_id,
+          user.id,
+          helperFunction.sendErrorMessage(
+            `We're really sorry, It is confirmed that *${data.message}* at the moment and reserved by *${username}*. Room will be avaiable at *${dateTime.end}*`
+          )
+        );
+        return res.status(200).send();
       }
       const { blockJson, roomInfo } = await messages.generateMessageForUpdate(
         selectedInformation
