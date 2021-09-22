@@ -33,6 +33,7 @@ exports.roomsAvailable = async (req, res, _next) => {
     commandServices.sendPrivateMessage(
       channel_id,
       user_id,
+      'Confirmation Message',
       sendErrorMessage(
         "We're really sorry, currently no rooms are available. Please try again later"
       )
@@ -61,6 +62,7 @@ exports.connectToGoogleCalendar = async (req, res, _next) => {
     commandServices.sendPrivateMessage(
       channel_id,
       user_id,
+      'Google Calendar Already Configured',
       sendErrorMessage('Google Calendar Already Configured')
     );
     // fs.readFile('token.json', (err, token) => {
@@ -92,19 +94,43 @@ exports.my_meetings = async (req, res, _next) => {
       commandServices.sendPrivateMessage(
         channel_id,
         user_id,
+        'Your meeting details',
         sendErrorMessage("You don't have any meeting for now")
       );
       return res.status(200).send();
     }
     const message = await messages.generateMeetingsMessage(meetings);
     //TODO with my meetings
-    const result = await commandServices.sendMessageToSlackUrl(
+    const result = await commandServices.sendPrivateMessage(
       channel_id,
+      user_id,
       'Your Meetings',
       message
     );
     console.log(result);
   } catch (err) {
     return res.status(200).send();
+  }
+};
+
+exports.getInfoReservedRooms = async (req, res, _next) => {
+  try {
+    res.status(200).send();
+    console.log('this command is running');
+    const rooms = await api.getBusyRooms();
+    const { user_id, channel_id } = req.body;
+    console.log(user_id, channel_id);
+    const message = await messages.generateMessageForReservedRooms(rooms);
+    console.log(message);
+    commandServices.sendPrivateMessage(
+      channel_id,
+      user_id,
+      'Reserved Rooms Information',
+      message
+    );
+    return res.status(200).send();
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send();
   }
 };

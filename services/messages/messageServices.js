@@ -1,6 +1,9 @@
 const commandServices = require('../commands/commandServices');
 const api = require('../api/apiServices');
-const { generatedTextForUsers } = require('../utils/helperFunctions');
+const {
+  generatedTextForUsers,
+  getDateAndTime,
+} = require('../utils/helperFunctions');
 exports.generateMessageForRooms = rooms => {
   let roomsRecord = [
     {
@@ -118,12 +121,12 @@ const roomsSelectionOptions = rooms => {
   return options;
 };
 
-const dateTime = dateOrTime => {
-  const date = new Date();
-  return dateOrTime
-    ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
-    : `${date.getHours()}:${date.getMinutes()}`;
-};
+// const dateTime = dateOrTime => {
+//   const date = new Date();
+//   return dateOrTime
+//     ? `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
+//     : `${date.getHours()}:${date.getMinutes()}`;
+// };
 
 exports.generateMessageForUpdate = async selectedInformation => {
   const { selected_room, selected_date, selected_time } = selectedInformation;
@@ -230,139 +233,58 @@ exports.generateMeetingsMessage = async meetings => {
   return block;
 };
 
-/*
-{
-	"blocks": [
-		{
-			"type": "header",
-			"text": {
-				"type": "plain_text",
-				"text": "Meeting Room Information",
-				"emoji": true
-			}
-		},
-		{
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": "*Meeting Room name* is reserved for you with *Talha* and *Sheraz* on *Date* at *2:00PM*\nRoom is located at *Ground Floor*"
-			}
-		}
-	]
-}
-*/
+exports.generateMessageForReservedRooms = async rooms => {
+  let blocks = [
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: 'Reserved Rooms',
+        emoji: true,
+      },
+    },
+  ];
 
-/*
+  if (!rooms.length) {
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'There is no meeting room reserved',
+      },
+    });
+    return blocks;
+  }
+  /*
+  {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `1. *Red Room* is reserved by *<@EDEERC|Username>* with *Particepants* meeting will start at *starting time* and end on *ending time*`,
+      },
+    },
+  */
 
-{
-	"blocks": [
-		{
-			"type": "header",
-			"text": {
-				"type": "plain_text",
-				"text": "Meeting Room Reservation",
-				"emoji": true
-			}
-		},
-		{
-			"type": "input",
-			"element": {
-				"type": "static_select",
-				"placeholder": {
-					"type": "plain_text",
-					"text": "Please select room ",
-					"emoji": true
-				},
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "*this is plain_text text*",
-							"emoji": true
-						},
-						"value": "value-0"
-					}
-				],
-				"action_id": "room-selection"
-			},
-			"label": {
-				"type": "plain_text",
-				"text": "Rooms Available",
-				"emoji": true
-			}
-		},
-		{
-			"type": "input",
-			"element": {
-				"type": "multi_users_select",
-				"placeholder": {
-					"type": "plain_text",
-					"text": "Select meeting participants",
-					"emoji": true
-				},
-				"action_id": "meeting-with"
-			},
-			"label": {
-				"type": "plain_text",
-				"text": "Meeting with",
-				"emoji": true
-			}
-		},
-		{
-			"type": "input",
-			"element": {
-				"type": "datepicker",
-				"initial_date": "1990-04-28",
-				"placeholder": {
-					"type": "plain_text",
-					"text": "Select a date",
-					"emoji": true
-				},
-				"action_id": "meeting-date"
-			},
-			"label": {
-				"type": "plain_text",
-				"text": "Meeting Date",
-				"emoji": true
-			}
-		},
-		{
-			"type": "input",
-			"element": {
-				"type": "timepicker",
-				"initial_time": "13:37",
-				"placeholder": {
-					"type": "plain_text",
-					"text": "Select time",
-					"emoji": true
-				},
-				"action_id": "meeting-time"
-			},
-			"label": {
-				"type": "plain_text",
-				"text": "Meeting time",
-				"emoji": true
-			}
-		},
-		{
-			"type": "divider"
-		},
-		{
-			"type": "actions",
-			"elements": [
-				{
-					"type": "button",
-					"text": {
-						"type": "plain_text",
-						"text": "Reserve Room",
-						"emoji": true
-					},
-					"value": "room_reserve_button_clicked",
-					"action_id": "reserve-room-btn"
-				}
-			]
-		}
-	]
-}
-
-*/
+  for (let i = 0; i < rooms.length; i++) {
+    const data = await commandServices.getUsersInformation(
+      rooms[i].reservedWith.split(',')
+    );
+    let users = [];
+    data.forEach(info => users.push(info.user.real_name));
+    const message = generatedTextForUsers(users);
+    const dateTime = getDateAndTime(rooms[i].reservedFrom);
+    const reservedRoom = {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `${i + 1}. *${rooms[i].name} Room* is reserved by *<@${
+          rooms[i].reservedBy
+        }>* with ${message} meeting will start at *${
+          dateTime.start
+        }* and end on *${dateTime.end}*`,
+      },
+    };
+    blocks.push(reservedRoom);
+  }
+  return blocks;
+};

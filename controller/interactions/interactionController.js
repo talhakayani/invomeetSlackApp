@@ -1,7 +1,6 @@
 const helperFunction = require('../../services/utils/helperFunctions');
 const messages = require('../../services/messages/messageServices');
-const { app } = require('../../connection/slackConnection');
-const { schedule, scheduleJob } = require('node-schedule');
+const { scheduleJob } = require('node-schedule');
 const {
   updateMessage,
   sendPrivateMessage,
@@ -32,7 +31,7 @@ exports.interactions = async (req, res, _next) => {
       return res.status(400).send('Please interact with elements');
     const [data] = actions;
 
-    const { type, action_id } = data;
+    const { action_id } = data;
     //console.log(action_id);
     let information,
       btnClicked = false;
@@ -93,6 +92,7 @@ exports.interactions = async (req, res, _next) => {
         );
         return res.status(200).send();
       }
+
       const { blockJson, roomInfo } = await messages.generateMessageForUpdate(
         selectedInformation
       );
@@ -118,21 +118,23 @@ exports.interactions = async (req, res, _next) => {
         location: roomInfo.location + ', at InvoZone office',
       };
 
+      await reserveTheRoom(
+        selected_room,
+        'busy',
+        user.id,
+        '' + selectedInformation.selected_users,
+        `${selected_date}=${selected_time}`
+      );
+
       const endTime = helperFunction.getDateAndTime(information.dateTime);
       scheduleJob(endTime.end, () => {
         reserveTheRoom(selected_room, 'available', null, null, null);
         console.log('Meeting end');
       });
       console.log('Meeting will end on: ' + endTime.end);
-      blockJson.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `Meeting will be end on: ${endTime.end}`,
-        },
-      });
       //console.log(result);
       //TODO:  Adding google calendar event
+
       const event = helperFunction.eventForGoogleCalendar(information);
 
       const oAuth2Client = await authorize(
@@ -141,18 +143,20 @@ exports.interactions = async (req, res, _next) => {
         user.id,
         true
       );
+
       /**
-       * the below line will be removed
+       * the below line will be removed later
        */
       // return res.status(200).send();
       addEvent(event, oAuth2Client);
-      const result = reserveTheRoom(
-        selected_room,
-        'busy',
-        user.id,
-        '' + selectedInformation.selected_users,
-        `${selected_date}=${selected_time}`
-      );
+
+      blockJson.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `Meeting will be end on: ${endTime.end}`,
+        },
+      });
 
       updateMessage(container.channel_id, container.message_ts, blockJson);
 

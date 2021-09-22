@@ -77,3 +77,9 @@ exports.isRoomAvailable = async room => {
   if (!data) return null;
   return data;
 };
+
+exports.getBusyRooms = async () => {
+  const { data } = await axios.get(DOMAIN_NAME + '/rooms/busy');
+  if (!data) return [];
+  return data.rooms;
+};

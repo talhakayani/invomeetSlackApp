@@ -1,13 +1,13 @@
 const { app, client } = require('../../connection/slackConnection');
 require('dotenv').config('../../.env');
 
-exports.sendPrivateMessage = async (channel_id, userid, message) => {
+exports.sendPrivateMessage = async (channel_id, userid, text, message) => {
   try {
     const result = await app.client.chat.postEphemeral({
       token: process.env.SLACK_BOT_TOKEN,
       channel: channel_id,
       user: userid,
-      text: 'Incorrect information provided',
+      text: text,
       blocks: message,
     });
   } catch (err) {
