@@ -15,12 +15,10 @@ const {
   getUsersInformation,
 } = require('../../services/commands/commandServices');
 const {
-  addTokenForGoogleCalendar,
   updateMeetingStatus,
   addInvoMeeting,
   getRoomIdByRoomName,
   addGoogleAuthToken,
-  getGoogleAuthToken,
 } = require('../../services/api/apiServices');
 require('dotenv').config('../../.env');
 const fs = require('fs');
@@ -33,9 +31,6 @@ exports.interactions = async (req, res, _next) => {
     const payload = JSON.parse(req.body.payload);
     const { user, actions, container, channel } = payload;
     const credentials = JSON.parse(process.env.CREDENTIALS);
-    // const oAuth2Client = authorize(credentials, channel.id, user.id, true);
-    // console.log(oAuth2Client);
-    //console.log(user, actions, container, channel);
     // const actions = payload.actions;
     if (!actions.length)
       return res.status(400).send('Please interact with elements');
@@ -77,35 +72,7 @@ exports.interactions = async (req, res, _next) => {
         return res.status(300).send();
       }
 
-      /**
-       * here is the implementation of check
-       */
-
-      // const data = await isRoomAvailable(selectedInformation.selected_room);
-      // console.log(data);
-      // if (!data.isAvailable) {
-      //   updateMessage(
-      //     container.channel_id,
-      //     container.message_ts,
-      //     'Room already reserved',
-      //     sendErrorMessage(
-      //       'Ops! it seems that room is already reserved, please wait confirmation message will be sent in a moment'
-      //     )
-      //   );
-      //   const reservedBy = await getUsersInformation([data.reservedBy]);
-      //   const username = reservedBy[0].user.real_name;
-      //   const dateTime = helperFunction.getDateAndTime(data.reservedFrom);
-
-      //   sendPrivateMessage(
-      //     container.channel_id,
-      //     user.id,
-      //     helperFunction.sendErrorMessage(
-      //       `We're really sorry, It is confirmed that *${data.message}* at the moment and reserved by *${username}*. Room will be avaiable at *${dateTime.end}*`
-      //     )
-      //   );
-      //   return res.status(200).send();
-      // }
-
+  
       const { blockJson, roomInfo } = await generateMessageForUpdate(
         selectedInformation
       );
@@ -159,13 +126,6 @@ exports.interactions = async (req, res, _next) => {
 
       const meeting_id = meeting.meeting.meeting.id;
       console.log(meeting_id);
-      // await reserveTheRoom(
-      //   selected_room,
-      //   'busy',
-      //   user.id,
-      //   '' + selectedInformation.selected_users,
-      //   `${selected_date}=${selected_time}`
-      // );
 
       scheduleJob(meetingTime.end, () => {
         updateMeetingStatus(meeting_id);
@@ -184,10 +144,6 @@ exports.interactions = async (req, res, _next) => {
         true
       );
 
-      /**
-       * the below line will be removed later
-       */
-      // return res.status(200).send();
       addEvent(event, oAuth2Client);
 
       blockJson.push({
@@ -205,11 +161,6 @@ exports.interactions = async (req, res, _next) => {
         blockJson
       );
 
-      // const job = schedule.scheduleJob('randomMessage', '* * * * *', () => {
-      //   console.log('Some');
-      // });
-      // console.log('Temp');
-      // if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
       if (fs.existsSync(`tempData${user.id}.json`))
         fs.unlinkSync(`tempData${user.id}.json`);
       return res.status(200).send();
@@ -226,13 +177,7 @@ exports.interactions = async (req, res, _next) => {
       oAuth2Client.getToken(value, async (err, token) => {
         if (err) return console.error('Error retrieving access token', err);
         oAuth2Client.setCredentials(token);
-        //TODO Insert Token to Database here
-        // Route will use  /token/add
-        // const body = {
-        //   user_id: user.id,
-        //   token: JSON.stringify(token),
-        //   calendarId: 'Primary',
-        // };
+
         const result = await addGoogleAuthToken(
           user.id,
           JSON.stringify(token),
