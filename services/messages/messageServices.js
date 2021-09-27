@@ -1,5 +1,5 @@
-const commandServices = require('../commands/commandServices');
-const api = require('../api/apiServices');
+const { getUsersInformation } = require('../commands/commandServices');
+const { getAllRooms, getRoomInfoByName } = require('../api/apiServices');
 const {
   generatedTextForUsers,
   getDateAndTime,
@@ -133,16 +133,14 @@ exports.generateMessageForUpdate = async selectedInformation => {
   // console.log(selected_date, selected_time, selected_room);
   let users = [],
     usersNames = [];
-  const roomInfo = await api.getRoomInformationByName(selected_room);
+  const roomInfo = await getRoomInfoByName(selected_room);
   if (
     selectedInformation.hasOwnProperty('selected_users') &&
     selectedInformation.selected_users.length
   ) {
-    users = await commandServices.getUsersInformation(
-      selectedInformation.selected_users
-    );
-
-    users.forEach(user => usersNames.push(user.user.real_name));
+    users = selectedInformation.selected_users;
+    // users = await getUsersInformation(selectedInformation.selected_users);
+    // users.forEach(user => usersNames.push(user.user.real_name));
   }
   let blockJson = [
     {
@@ -157,8 +155,8 @@ exports.generateMessageForUpdate = async selectedInformation => {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `*${selected_room} Room* is reserved for you ${generatedTextForUsers(
-          usersNames
+        text: `*${selected_room} Room* is reserved for you with ${generatedTextForUsers(
+          users
         )} on *${selected_date}* at *${selected_time}*\nRoom is located at *${
           roomInfo.location
         }*`,
@@ -195,42 +193,134 @@ exports.generateMessageForToken = tokenURL => {
   ];
 };
 
-exports.generateMeetingsMessage = async meetings => {
-  const block = [
+// exports.generateMeetingsMessage = async meetings => {
+//   const block = [
+//     {
+//       type: 'header',
+//       text: {
+//         type: 'plain_text',
+//         text: 'Your Meetings',
+//         emoji: true,
+//       },
+//     },
+//   ];
+
+//   for (let i = 0; i < meetings.length; i++) {
+//     const { reservedWith, reservedFrom, location, name } = meetings[i];
+//     const information = await getUsersInformation(reservedWith.split(','));
+//     reservedFrom.replace('=', ' ');
+//     const names = [];
+//     information.forEach(info => {
+//       names.push(info.user.real_name);
+//     });
+//     const userText = generatedTextForUsers(names);
+//     const meetingList = {
+//       type: 'section',
+//       text: {
+//         type: 'mrkdwn',
+//         text: `${i + 1}. Meeting with ${userText} at *${reservedFrom.replace(
+//           '=',
+//           ' '
+//         )}* in *${name}* Room on *${location}*`,
+//       },
+//     };
+//     block.push(meetingList);
+//   }
+//   return block;
+// };
+
+exports.generateMesssageForMeetings = rooms => {
+  //console.log(JSON.stringify(rooms, null, 2));
+  let blocks = [
     {
       type: 'header',
       text: {
         type: 'plain_text',
-        text: 'Your Meetings',
+        text: 'Meetings In Progress',
         emoji: true,
       },
+    },
+    {
+      type: 'divider',
+    },
+  ];
+
+  for (let i = 0; i < rooms.length; i++) {
+    const room = {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: `${rooms[i].name} Room at ${rooms[i].location}`,
+        emoji: true,
+      },
+    };
+    blocks.push(room);
+
+    for (let j = 0; j < rooms[i].meetings.length; j++) {
+      const meetingWith = rooms[i].meetings[j].reservedWith.split(',');
+      const textForMeetingWith = generatedTextForUsers(meetingWith);
+      //console.log(textForMeetingWith);
+      const meeting = {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `${j + 1})\t<@${
+            rooms[i].meetings[j].reservedBy
+          }> reserve this room for Meeting with ${textForMeetingWith} started at *${new Date(
+            rooms[i].meetings[j].reservedFrom
+          )}* and will end on *${new Date(rooms[i].meetings[j].reservedTo)}*`,
+        },
+      };
+      blocks.push(meeting);
+    }
+  }
+
+  return blocks;
+};
+
+exports.generateMessageForMeetingHistory = meetings => {
+  let blocks = [
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: 'Meetings History',
+        emoji: true,
+      },
+    },
+    {
+      type: 'divider',
     },
   ];
 
   for (let i = 0; i < meetings.length; i++) {
-    const { reservedWith, reservedFrom, location, name } = meetings[i];
-    const information = await commandServices.getUsersInformation(
-      reservedWith.split(',')
-    );
-    reservedFrom.replace('=', ' ');
-    const names = [];
-    information.forEach(info => {
-      names.push(info.user.real_name);
-    });
-    const userText = generatedTextForUsers(names);
-    const meetingList = {
+    const room = {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: `${meetings[i].room.name} Room at ${meetings[i].room.location}`,
+        emoji: true,
+      },
+    };
+    blocks.push(room);
+    const meetingWith = meetings[i].reservedWith.split(',');
+    const textForMeetingWith = generatedTextForUsers(meetingWith);
+    //console.log(textForMeetingWith);
+    const meeting = {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `${i + 1}. Meeting with ${userText} at *${reservedFrom.replace(
-          '=',
-          ' '
-        )}* in *${name}* Room on *${location}*`,
+        text: `${i + 1})\t<@${
+          meetings[i].reservedBy
+        }> reserve this room for Meeting with ${textForMeetingWith} started at *${new Date(
+          meetings[i].reservedFrom
+        )}* and will end on *${new Date(meetings[i].reservedTo)}*`,
       },
     };
-    block.push(meetingList);
+    blocks.push(meeting);
   }
-  return block;
+
+  return blocks;
 };
 
 exports.generateMessageForReservedRooms = async rooms => {
@@ -266,9 +356,7 @@ exports.generateMessageForReservedRooms = async rooms => {
   */
 
   for (let i = 0; i < rooms.length; i++) {
-    const data = await commandServices.getUsersInformation(
-      rooms[i].reservedWith.split(',')
-    );
+    const data = await getUsersInformation(rooms[i].reservedWith.split(','));
     let users = [];
     data.forEach(info => users.push(info.user.real_name));
     const message = generatedTextForUsers(users);

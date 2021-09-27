@@ -29,12 +29,12 @@ exports.sendMessageToSlackUrl = async (channel_id, text, message) => {
   }
 };
 
-exports.updateMessage = async (channel_id, message_ts, message) => {
+exports.updateMessage = async (channel_id, message_ts, text, message) => {
   const result = await app.client.chat.update({
     token: process.env.SLACK_BOT_TOKEN,
     channel: channel_id,
     ts: message_ts,
-    text: 'Room reserved',
+    text: text,
     blocks: message,
   });
 };

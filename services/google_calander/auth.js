@@ -4,7 +4,7 @@ const fs = require('fs');
 const { addEvent } = require('../../services/google_calander/utils/operations');
 const { sendMessageToSlackUrl } = require('../commands/commandServices');
 const { generateMessageForToken } = require('../messages/messageServices');
-const { getTokenData } = require('../api/apiServices');
+const { getTokenData, getGoogleAuthToken } = require('../api/apiServices');
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
 exports.authorize = async (credentials, channel_id, user_id, forResponse) => {
@@ -14,12 +14,12 @@ exports.authorize = async (credentials, channel_id, user_id, forResponse) => {
     client_secret,
     redirect_uris[0]
   );
-  if (!forResponse) getAccessToken(oAuth2Client, channel_id, user_id);
-  else {
-    const data = await getTokenData(user_id);
+  if (!forResponse) {
+    return getAccessToken(oAuth2Client, channel_id, user_id);
+  } else {
+    const data = await getGoogleAuthToken(user_id);
     console.log(data);
-    console.log(data.token);
-    if (data.token) oAuth2Client.setCredentials(JSON.parse(data.token.token));
+    if (data) oAuth2Client.setCredentials(data);
   } // else {
   //   fs.readFile(tokenFileName, (err, token) => {
   //     if (err) console.log('Unable to read the token.json');
@@ -39,4 +39,5 @@ function getAccessToken(oAuth2Client, channel_id, user_id) {
   //   console.log('Authorize this app by visiting this url:', authUrl);
   const message = generateMessageForToken(authUrl);
   sendMessageToSlackUrl(channel_id, 'Google Calendar Authentication', message);
+  return oAuth2Client;
 }

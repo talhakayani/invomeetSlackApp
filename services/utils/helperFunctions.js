@@ -2,18 +2,18 @@ const fs = require('fs');
 const path = require('path');
 const app = require('../../connection/slackConnection');
 const { getUsersInformation } = require('../commands/commandServices');
-exports.findMentions = text => {
-  const exp = /<(.*?)>/;
-  var test = text.match(exp);
-  var finalValue = [];
-  while (test) {
-    finalValue.push(test[0].split('|')[0].replace('<@', ''));
-    text = text.replace(exp, '');
-    test = text.match(exp);
-  }
-  if (!finalValue.lenght) return [];
-  return finalValue;
-};
+// exports.findMentions = text => {
+//   const exp = /<(.*?)>/;
+//   var test = text.match(exp);
+//   var finalValue = [];
+//   while (test) {
+//     finalValue.push(test[0].split('|')[0].replace('<@', ''));
+//     text = text.replace(exp, '');
+//     test = text.match(exp);
+//   }
+//   if (!finalValue.lenght) return [];
+//   return finalValue;
+// };
 // this function will save the information for single time
 exports.insertInformation = (fileName, data, type) => {
   //path = '../../tempData.json';
@@ -74,12 +74,12 @@ exports.getInformationFromTheFile = fileName => {
 
 exports.generatedTextForUsers = users => {
   if (!users.length) return '';
-  if (users.length == 1) return `*${users[0]}*`;
+  if (users.length == 1) return `<@${users[0]}>`;
   let text = 'with ';
   for (let i = 0; i < users.length - 1; i++) {
-    text += '*' + users[i] + '*, ';
+    text += '<@' + users[i] + '>, ';
   }
-  text += `and *${users[users.length - 1]}*`;
+  text += `and <@${users[users.length - 1]}>`;
   return text;
 };
 
@@ -98,16 +98,16 @@ exports.sendErrorMessage = message => {
 
 const TIMEOFFSET = '+05:00';
 
-const dateTimeForCalander = dateTime => {
-  const [date, time] = dateTime.split('=');
+const dateTimeForCalander = (dateTime, hours = 1) => {
+  // const [date, time] = dateTime.split('=');
   //const [year, month, day] = date.split('-');
   //const [hours, minutes] = time.split(':');
-
-  const newDate = `${date}T${time}:00.000${TIMEOFFSET}`;
-  const event = new Date(Date.parse(newDate));
+  dateTime.replace(/-/g, ' ');
+  //const newDate = `${date}T${time}:00.000${TIMEOFFSET}`;
+  const event = new Date(dateTime);
   const startDate = event;
   const endDate = new Date(
-    new Date(startDate).setHours(startDate.getHours() + 1)
+    new Date(startDate).setHours(startDate.getHours() + hours)
   );
   return {
     start: startDate,
