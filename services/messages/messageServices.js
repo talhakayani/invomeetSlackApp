@@ -270,7 +270,18 @@ exports.generateMesssageForMeetings = rooms => {
             rooms[i].meetings[j].reservedFrom
           )}* and will end on *${new Date(rooms[i].meetings[j].reservedTo)}*`,
         },
+        accessory: {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'End Meeting Now',
+            emoji: true,
+          },
+          value: 'event is deleted',
+          action_id: `private-endMeeting-${rooms[i].meetings[j].googleCalendarEventId}`,
+        },
       };
+      console.log(rooms[i].meetings[j].googleCalendarEventId);
       blocks.push(meeting);
     }
   }
@@ -281,11 +292,20 @@ exports.generateMesssageForMeetings = rooms => {
 exports.generateMessageForMeetingHistory = meetings => {
   let blocks = [
     {
-      type: 'header',
+      type: 'section',
       text: {
-        type: 'plain_text',
-        text: 'Meetings History',
-        emoji: true,
+        type: 'mrkdwn',
+        text: '*Meetings History*',
+      },
+      accessory: {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'Clear History',
+          emoji: true,
+        },
+        value: 'event is deleted',
+        action_id: 'remove-history',
       },
     },
     {
@@ -298,7 +318,9 @@ exports.generateMessageForMeetingHistory = meetings => {
       type: 'header',
       text: {
         type: 'plain_text',
-        text: `${meetings[i].room.name} Room at ${meetings[i].room.location}`,
+        text: `${i + 1})\t${meetings[i].room.name} Room at ${
+          meetings[i].room.location
+        }`,
         emoji: true,
       },
     };
@@ -310,7 +332,7 @@ exports.generateMessageForMeetingHistory = meetings => {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `${i + 1})\t<@${
+        text: `<@${
           meetings[i].reservedBy
         }> reserve this room for Meeting with ${textForMeetingWith} started at *${new Date(
           meetings[i].reservedFrom

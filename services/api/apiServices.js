@@ -198,6 +198,33 @@ exports.getMeetingHistory = async reservedBy => {
     return err;
   }
 };
+
+exports.getInformationByMeetingId = async googleCalendarMeetingId => {
+  try {
+    const { data } = await axios.get(
+      DOMAIN + `/meetings/info/${googleCalendarMeetingId}`
+    );
+    if (!data) return null;
+    return data.meeting;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};
+
+exports.removeHistory = async userId => {
+  try {
+    const { data } = await axios.delete(
+      DOMAIN + `/meetings/history/remove/${userId}`
+    );
+    if (!data) return null;
+    return data.message;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};
+
 // exports.getAvailableRooms = async () => {
 //   try {
 //     const { data } = await axios.get(DOMAIN_NAME + '/rooms/available'); // stuck process here

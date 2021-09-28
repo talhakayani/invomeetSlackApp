@@ -4,6 +4,7 @@ const {
   getDateAndTime,
   insertInformation,
   eventForGoogleCalendar,
+  generatedTextForUsers,
 } = require('../../services/utils/helperFunctions');
 const {
   generateMessageForUpdate,
@@ -19,6 +20,8 @@ const {
   addInvoMeeting,
   getRoomIdByRoomName,
   addGoogleAuthToken,
+  getInformationByMeetingId,
+  removeHistory,
 } = require('../../services/api/apiServices');
 require('dotenv').config('../../.env');
 const fs = require('fs');
@@ -27,6 +30,7 @@ const {
   addEvent,
   deleteGoogleCalendarEvent,
 } = require('../../services/google_calander/utils/operations');
+const { auth } = require('google-auth-library');
 
 exports.interactions = async (req, res, _next) => {
   try {
@@ -166,11 +170,40 @@ exports.interactions = async (req, res, _next) => {
       });
       console.log('Meeting will end on: ' + meetingTime.end);
 
+      /**
+       {
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "This is a section block with a button."
+			},
+			"accessory": {
+				"type": "button",
+				"text": {
+					"type": "plain_text",
+					"text": "Click Me",
+					"emoji": true
+				},
+				"value": "click_me_123",
+				"action_id": "button-action"
+			}
+		}
+       */
       blockJson.push({
         type: 'section',
         text: {
           type: 'mrkdwn',
           text: `Meeting will be end on: ${meetingTime.end}`,
+        },
+        accessory: {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'End Meeting Now',
+            emoji: true,
+          },
+          value: 'event is deleted',
+          action_id: `endMeeting-${googleCalendarEventId}`,
         },
       });
 
@@ -184,6 +217,80 @@ exports.interactions = async (req, res, _next) => {
       if (fs.existsSync(`tempData${user.id}.json`))
         fs.unlinkSync(`tempData${user.id}.json`);
       return res.status(200).send();
+    }
+
+    if (action_id.includes('endMeeting')) {
+      res.status(200).send();
+
+      let googleCalendarRegisteredEventId;
+      if (action_id.includes('private')) {
+        googleCalendarRegisteredEventId = action_id.split('-')[2];
+      } else {
+        googleCalendarRegisteredEventId = action_id.split('-')[1];
+      }
+
+      console.log(googleCalendarRegisteredEventId);
+      const meeting = await getInformationByMeetingId(
+        googleCalendarRegisteredEventId
+      );
+
+      if (!meeting) {
+        sendPrivateMessage(
+          channel.id,
+          user.id,
+          'Unable to end meeting',
+          sendErrorMessage('Meeting is already ended')
+        );
+        return res.status(200).send();
+      }
+
+      const oAuth2Client = await authorize(
+        credentials,
+        channel.id,
+        user.id,
+        true
+      );
+      const result = await deleteGoogleCalendarEvent(
+        meeting.googleCalendarEventId,
+        'primary',
+        oAuth2Client
+      );
+      if (!result) {
+        sendPrivateMessage(
+          channel.id,
+          user.id,
+          'Unable to end meeting',
+          sendErrorMessage(
+            "We're really sorry for this because we're unable to end your meeting for you at the moment pleae verify that you're ending the meeting which is currently in progress, Thank you"
+          )
+        );
+
+        return res.status(200).send();
+      }
+      const meetingInProgressUpdateResult = await updateMeetingStatus(
+        meeting.id
+      );
+
+      if (action_id.includes('private')) {
+        const textForUsers = generatedTextForUsers(
+          meeting.reservedWith.split(',')
+        );
+        sendPrivateMessage(
+          channel.id,
+          user.id,
+          'Meeting Deleted',
+          sendErrorMessage('Your meeting with ' + textForUsers + ' is now end')
+        );
+        return res.status(200).send();
+      }
+      updateMessage(
+        container.channel_id,
+        container.message_ts,
+        'Meeting End',
+        sendErrorMessage(
+          'Your meeting is Ended, It will be showed in your history.\nView your history by entering the command /meetings-history, Thank you'
+        )
+      );
     }
 
     if (action_id == 'token-input') {
@@ -201,7 +308,7 @@ exports.interactions = async (req, res, _next) => {
         const result = await addGoogleAuthToken(
           user.id,
           JSON.stringify(token),
-          'Primary'
+          'primary'
         );
         if (!result) {
           updateMessage(
@@ -222,6 +329,18 @@ exports.interactions = async (req, res, _next) => {
         );
         return res.status(200).send();
       });
+      return res.status(200).send();
+    }
+
+    if (action_id == 'remove-history') {
+      console.log('button is clicked');
+      const response = await removeHistory(user.id);
+      sendPrivateMessage(
+        channel.id,
+        user.id,
+        'Message about history',
+        sendErrorMessage(response)
+      );
       return res.status(200).send();
     }
     if (!btnClicked) {

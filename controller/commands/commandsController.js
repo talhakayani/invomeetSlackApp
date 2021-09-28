@@ -143,7 +143,6 @@ exports.getEndMeetingsHistory = async (req, res, _next) => {
     res.status(200).send();
     const { user_id, channel_id } = req.body;
     const history = await getMeetingHistory(user_id);
-    console.log(history);
     if (!history.length) {
       sendPrivateMessage(
         channel_id,
@@ -162,7 +161,6 @@ exports.getEndMeetingsHistory = async (req, res, _next) => {
       'Your history',
       message
     );
-    console.log(result);
     return res.status(200).send();
   } catch (err) {
     console.log(err);

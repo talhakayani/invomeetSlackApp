@@ -24,7 +24,6 @@ exports.deleteGoogleCalendarEvent = async (eventId, calendarId, auth) => {
       calendarId: calendarId,
       eventId: eventId,
     });
-    console.log(res.data);
     if (res.data === '') return 'Event Deleted';
     return null;
   } catch (err) {
