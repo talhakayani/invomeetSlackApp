@@ -147,7 +147,8 @@ exports.addInvoMeeting = async (
   reservedFrom,
   reservedTo,
   inProgress = 'InProgress',
-  roomId
+  roomId,
+  googleCalendarEventId
 ) => {
   try {
     const { data } = await axios({
@@ -160,6 +161,7 @@ exports.addInvoMeeting = async (
         reservedTo,
         inProgress,
         roomId,
+        googleCalendarEventId,
       },
       headers: { 'Content-Type': 'application/json' },
     });

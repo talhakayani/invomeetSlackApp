@@ -22,7 +22,7 @@ const { authorize } = require('../../services/google_calander/auth');
 
 exports.roomsAvailable = async (req, res, _next) => {
   try {
-    res.status(200).send('Please wait we are processing your request');
+    res.status(200).send();
 
     //if (fs.existsSync('tempData.json')) fs.unlinkSync('tempData.json');
     const { token, channel_id, user_id, command, text, response_url } =
@@ -56,7 +56,7 @@ exports.roomsAvailable = async (req, res, _next) => {
 
 exports.connectToGoogleCalendar = async (req, res, _next) => {
   try {
-    res.status(200).send('Please wait we are processing your request');
+    res.status(200).send();
     const { token, channel_id, user_id, command, text, response_url } =
       req.body;
     //console.log(token, channel_id, user_id, command, text, response_url);
@@ -85,7 +85,7 @@ exports.connectToGoogleCalendar = async (req, res, _next) => {
 
 exports.my_meetings = async (req, res, _next) => {
   try {
-    res.status(200).send('Please wait we are processing your request');
+    res.status(200).send();
     const { body } = req;
     const { user_id, channel_id } = body;
     const meetings = await getInProgressMeetingsByUser(user_id);
@@ -111,7 +111,7 @@ exports.my_meetings = async (req, res, _next) => {
 
 exports.getInfoReservedRooms = async (req, res, _next) => {
   try {
-    res.status(200).send('Please wait we are processing your request');
+    res.status(200).send();
     const rooms = await getAllRoomsWithAllMeetingsInProgress();
     const { user_id, channel_id } = req.body;
     if (!rooms.length) {
@@ -140,9 +140,10 @@ exports.getInfoReservedRooms = async (req, res, _next) => {
 
 exports.getEndMeetingsHistory = async (req, res, _next) => {
   try {
-    res.status(200).send('Please wait we are processing your request');
+    res.status(200).send();
     const { user_id, channel_id } = req.body;
     const history = await getMeetingHistory(user_id);
+    console.log(history);
     if (!history.length) {
       sendPrivateMessage(
         channel_id,
@@ -152,12 +153,16 @@ exports.getEndMeetingsHistory = async (req, res, _next) => {
           "Currently you don't have any history for meetings may be you reserve meetings but untill they are end it will not considered as history"
         )
       );
-
       return res.status(200).send();
     }
-
     const message = generateMessageForMeetingHistory(history);
-    sendPrivateMessage(channel_id, user_id, 'Your history', message);
+    result = await sendPrivateMessage(
+      channel_id,
+      user_id,
+      'Your history',
+      message
+    );
+    console.log(result);
     return res.status(200).send();
   } catch (err) {
     console.log(err);

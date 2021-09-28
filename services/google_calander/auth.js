@@ -20,15 +20,8 @@ exports.authorize = async (credentials, channel_id, user_id, forResponse) => {
     const data = await getGoogleAuthToken(user_id);
     console.log(data);
     if (data) oAuth2Client.setCredentials(data);
-  } // else {
-  //   fs.readFile(tokenFileName, (err, token) => {
-  //     if (err) console.log('Unable to read the token.json');
-  //     else {
-  //       oAuth2Client.setCredentials(JSON.parse(token));
-  //     }
-  //   });
+  }
   return oAuth2Client;
-  //}
 };
 
 function getAccessToken(oAuth2Client, channel_id, user_id) {

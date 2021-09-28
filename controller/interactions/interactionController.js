@@ -23,7 +23,10 @@ const {
 require('dotenv').config('../../.env');
 const fs = require('fs');
 const { authorize } = require('../../services/google_calander/auth');
-const { addEvent } = require('../../services/google_calander/utils/operations');
+const {
+  addEvent,
+  deleteGoogleCalendarEvent,
+} = require('../../services/google_calander/utils/operations');
 
 exports.interactions = async (req, res, _next) => {
   try {
@@ -72,7 +75,6 @@ exports.interactions = async (req, res, _next) => {
         return res.status(300).send();
       }
 
-  
       const { blockJson, roomInfo } = await generateMessageForUpdate(
         selectedInformation
       );
@@ -90,12 +92,36 @@ exports.interactions = async (req, res, _next) => {
           emails.push({ email: selected_users[i].user.profile.email });
         }
       }
+
       let information = {
         dateTime: selected_date + ':' + selected_time,
         message: blockJson[1].text.text,
         attendees: emails != null ? emails : [],
         location: roomInfo.location + ', at InvoZone office',
       };
+      const event = eventForGoogleCalendar(information);
+
+      const oAuth2Client = await authorize(
+        credentials,
+        channel.id,
+        user.id,
+        true
+      );
+
+      const data = await addEvent(event, oAuth2Client);
+
+      if (!data) {
+        updateMessage(
+          container.channel_id,
+          container.message_ts,
+          'Meeting Reserved',
+          sendErrorMessage(
+            "We're unable to create google event for now please try again or first configure the google calendar"
+          )
+        );
+        return res.status(200).send();
+      }
+      const googleCalendarEventId = data.id;
       const meetingTime = getDateAndTime(information.dateTime, 1);
       const roomId = await getRoomIdByRoomName(
         selectedInformation.selected_room
@@ -107,9 +133,9 @@ exports.interactions = async (req, res, _next) => {
         meetingTime.start,
         meetingTime.end,
         'InProgress',
-        roomId
+        roomId,
+        googleCalendarEventId
       );
-      console.log(meeting);
       if (!meeting.data) {
         updateMessage(
           container.channel_id,
@@ -125,26 +151,20 @@ exports.interactions = async (req, res, _next) => {
       }
 
       const meeting_id = meeting.meeting.meeting.id;
-      console.log(meeting_id);
 
-      scheduleJob(meetingTime.end, () => {
+      scheduleJob(meetingTime.end, async () => {
         updateMeetingStatus(meeting_id);
+        const result = await deleteGoogleCalendarEvent(
+          googleCalendarEventId,
+          'primary',
+          oAuth2Client
+        );
+
+        if (result) console.log('Event Deleted');
+        else console.log('unable to delete an event');
         console.log('Meeting end');
       });
       console.log('Meeting will end on: ' + meetingTime.end);
-      //console.log(result);
-      //TODO:  Adding google calendar event
-
-      const event = eventForGoogleCalendar(information);
-
-      const oAuth2Client = await authorize(
-        credentials,
-        channel.id,
-        user.id,
-        true
-      );
-
-      addEvent(event, oAuth2Client);
 
       blockJson.push({
         type: 'section',
