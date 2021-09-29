@@ -170,25 +170,6 @@ exports.interactions = async (req, res, _next) => {
       });
       console.log('Meeting will end on: ' + meetingTime.end);
 
-      /**
-       {
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": "This is a section block with a button."
-			},
-			"accessory": {
-				"type": "button",
-				"text": {
-					"type": "plain_text",
-					"text": "Click Me",
-					"emoji": true
-				},
-				"value": "click_me_123",
-				"action_id": "button-action"
-			}
-		}
-       */
       blockJson.push({
         type: 'section',
         text: {
@@ -220,8 +201,6 @@ exports.interactions = async (req, res, _next) => {
     }
 
     if (action_id.includes('endMeeting')) {
-      res.status(200).send();
-
       let googleCalendarRegisteredEventId;
       if (action_id.includes('private')) {
         googleCalendarRegisteredEventId = action_id.split('-')[2];
